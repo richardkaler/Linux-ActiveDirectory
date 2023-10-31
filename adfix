@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#This has been tested on OpenSUSE. NOTE: These commands will not work on Debian or Ubuntu - or in the least, if they do work, some modifications will need to be made. See my comment below in reference to 
+#pam-config --add --mkhomedir 
+
+
+read -r -p "Enter the Active Directory login name for the user you need to join to your domain: " user
+
+echo attempting to join via kinit
+
+if kinit "$user"; then
+
+echo Processing configuration changes for PAM.
+
+if {
+ pam-config --query --ldap
+ pam-config --query --krb5
+ pam-config --query --winbind
+ #pam-config --query --sss
+ pam-config --query --mkhomedir #While this works great on OpenSUSE for Ubuntu and Debian, the proper syntax invovles: pam-auth-update --enable mkhomedir and there is more to it than that. 
+ #pam-config --delete --winbind
+ pam-config --add --mkhomedir
+}; then
+ 	echo finished modifying pam configurations to resolve Active Directory issues.
+	echo Log out and try logging back in with your user again
+else
+	echo Are you root? These commands require super user permissions. If you see an error message - try running this script again as root
+fi
+else
+echo unable to join user to domain - try another user or review logs before re-entering user name
+fi
